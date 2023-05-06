@@ -75,8 +75,13 @@ class PhotosController < ApplicationController
   def destroy
     resource = @photo.observations.first || @photo.taxa.first
     @photo.destroy
-    flash[:notice] = t(:photo_deleted)
-    redirect_back_or_default(resource || '/')
+    respond_to do |format|
+      format.html do
+        flash[:notice] = t(:photo_deleted)
+        redirect_back_or_default(resource || '/')
+      end
+      format.json { head :no_content }
+    end
   end
 
   def fix
