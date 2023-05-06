@@ -1,4 +1,7 @@
 #encoding: utf-8
+
+REJECTED_TAGS = ( ExifMetadata::REJECTED_TAGS + %i[dc dimensions] ).freeze
+
 class Photo < ApplicationRecord
   acts_as_flaggable
   has_one :photo_metadata, autosave: true, dependent: :destroy
@@ -534,6 +537,30 @@ class Photo < ApplicationRecord
         end
       end
     end
+  end
+
+  def visible_metadata(viewer)
+    return metadata.select { _1.to_s =~ /copyright/i } if viewer.nil?
+
+    with_coords = observations.detect {| o | !o.coordinates_viewable_by?( viewer ) }.blank?
+
+    metadata.dup.tap do | md |
+      md.except!( *REJECTED_TAGS )
+      md.reject! { _1.to_s =~ /description/i }
+      md.reject! { _1.to_s =~ /(gps|date)/i } unless with_coords
+    end
+
+    metadata.map do | k, v |
+      new_val = if k.to_s =~ /gps/i
+        v.is_a?( EXIFR::TIFF::Degrees ) || v.is_a?( Rational ) ? v.to_f : v
+      else
+        case v
+        when EXIFR::TIFF::Orientation then v.to_i
+        else v
+        end
+      end
+      [k, new_val]
+    end.to_h
   end
 
   private

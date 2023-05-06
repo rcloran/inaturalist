@@ -25,6 +25,11 @@ class PhotosController < ApplicationController
         @observations = @photo.observations.limit(100)
         @flags = @photo.flags
       end
+      format.json do
+        json = @photo.as_json
+        json["metadata"] = @photo.visible_metadata(current_user).as_json
+        render json: json
+      end
       format.js do
         partial = params[:partial] || 'photo'
         render :layout => false, :partial => partial, :object => @photo

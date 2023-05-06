@@ -5,4 +5,7 @@ class PhotoMetadata < ApplicationRecord
   belongs_to :photo
 
   serialize :metadata, CompressedYAMLColumn
+  def serializable_hash( opts = nil )
+    super( opts )
+  end
 end
